@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador Teórico B1 Costa Rica</title>
+    <link rel="manifest" href="./manifest.json">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --gold: #d97706;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #cbd5e1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
+        .app { width: 100%; max-width: 500px; background: var(--card); min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 25px rgba(0,0,0,0.08); }
+        header { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.15rem; font-weight: 800; }
+        header p { font-size: 0.78rem; opacity: 0.9; }
+        .pro-badge { background: #fbbf24; color: #78350f; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; cursor: pointer; border: none; }
+        .pro-badge.active { background: #22c55e; color: #fff; }
+        .screen { display: none; flex-direction: column; flex: 1; padding: 18px; overflow-y: auto; }
+        .screen.active { display: flex; }
+        .hero-box { background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+        .hero-box h2 { font-size: 1.05rem; color: #0369a1; margin-bottom: 4px; }
+        .hero-box p { font-size: 0.84rem; color: #334155; line-height: 1.4; }
+        .btn { width: 100%; padding: 14px 16px; border-radius: 12px; border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; transition: transform 0.1s; text-align: left; }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+        .btn-secondary { background: #f8fafc; color: var(--text); border: 1.5px solid var(--border); }
+        .btn-center { justify-content: center; text-align: center; }
+        .lock-tag { background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; white-space: nowrap; }
+        .free-tag { background: #dcfce7; color: #166534; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; }
+        .stats-bar { display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 10px 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; }
+        .timer { color: var(--danger); font-variant-numeric: tabular-nums; }
+        .cat-pill { display: inline-block; background: #e0f2fe; color: var(--primary-dark); font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-bottom: 10px; align-self: flex-start; }
+        .q-text { font-size: 1.02rem; font-weight: 700; line-height: 1.45; margin-bottom: 16px; }
+        .opt-btn { width: 100%; background: #f8fafc; border: 2px solid var(--border); border-radius: 12px; padding: 13px 14px; text-align: left; font-size: 0.92rem; margin-bottom: 10px; cursor: pointer; color: var(--text); line-height: 1.35; }
+        .opt-btn.correct { background: #dcfce7 !important; border-color: var(--success) !important; color: #14532d; font-weight: 700; }
+        .opt-btn.wrong { background: #fee2e2 !important; border-color: var(--danger) !important; color: #7f1d1d; }
+        .exp-box { display: none; background: #eff6ff; border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; font-size: 0.85rem; line-height: 1.45; margin-top: 6px; margin-bottom: 14px; }
+        .tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 9px 10px; border-radius: 8px; border: 1.5px solid var(--border); background: #f8fafc; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; color: var(--text); }
+        .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .guide-card { background: #f8fafc; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .guide-card h3 { font-size: 0.95rem; color: var(--primary-dark); margin-bottom: 6px; }
+        .guide-card p, .guide-card li { font-size: 0.84rem; line-height: 1.45; color: #334155; }
+        .guide-card ul { padding-left: 18px; margin-top: 6px; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.75); z-index: 100; justify-content: center; align-items: center; padding: 18px; }
+        .modal-overlay.active { display: flex; }
+        .modal-card { background: #fff; border-radius: 18px; padding: 22px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 35px rgba(0,0,0,0.25); }
+        .modal-card h2 { font-size: 1.3rem; margin-bottom: 8px; color: var(--text); }
+        .modal-card ul { text-align: left; margin: 14px 0 20px; list-style: none; font-size: 0.88rem; }
+        .modal-card li { padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
+        .disclaimer { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: auto; padding-top: 14px; line-height: 1.35; }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <div>
+            <h1>Simulador Teórico B1</h1>
+            <p>Costa Rica • 10 Capítulos Oficiales</p>
+        </div>
+        <button id="header-pro-btn" class="pro-badge" onclick="openPaywall()">🔒 VERSIÓN PRO</button>
+    </header>
+
+    <div id="menu-screen" class="screen active">
+        <div class="hero-box">
+            <h2>Estudia y Repasa Sin Límites</h2>
+            <p>Banco masivo de más de 135 preguntas oficiales reales basadas en el COSEVI con selección aleatoria inteligente.</p>
+        </div>
+
+        <button class="btn btn-primary" onclick="handleStartExam()">
+            <div>
+                <div>Simulacro Oficial (40 Preguntas)</div>
+                <div style="font-size:0.75rem; font-weight:400; opacity:0.9;">50 minutos • Nota mínima 80% (32/40)</div>
+            </div>
+            <span id="exam-lock-badge" class="lock-tag">🔒 PRO</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="startQuiz('practice', 15)">
+            <div>
+                <div>Práctica Rápida (15 Preguntas)</div>
+                <div style="font-size:0.75rem; font-weight:400; color:var(--muted);">Sin límite de tiempo • Retroalimentación inmediata</div>
+            </div>
+            <span class="free-tag">GRATIS</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="openChapters()">
+            <div>
+                <div>Estudiar los 10 Capítulos del Manual</div>
+                <div style="font-size:0.75rem; font-weight:400; color:var(--muted);">Cap. 1 y 2 gratis • Cap. 3 al 10 PRO</div>
+            </div>
+            <span>📖</span>
+        </button>
+
+        <button class="btn btn-secondary" onclick="openGuide()">
+            <div>
+                <div>Guía Visual: Rotondas, Señales y Vehículo</div>
+                <div style="font-size:0.75rem; font-weight:400; color:var(--muted);">Diagramas explicativos paso a paso</div>
+            </div>
+            <span class="free-tag">GRATIS</span>
+        </button>
+
+        <button id="unlock-cta-btn" class="btn btn-gold btn-center" style="margin-top:6px;" onclick="openPaywall()">
+            ⭐ Desbloquear Acceso Completo (Pago Único)
+        </button>
+
+        <p class="disclaimer">Herramienta educativa independiente de práctica basada en el Manual del Conductor de Costa Rica. No es una aplicación oficial del COSEVI.</p>
+    </div>
+
+    <div id="chapters-screen" class="screen">
+        <h2 style="font-size:1.1rem; margin-bottom:12px;">Los 10 Capítulos del Manual Oficial</h2>
+        <div id="chapters-list" style="overflow-y:auto; max-height:480px; padding-right:4px;"></div>
+        <button class="btn btn-secondary btn-center" style="margin-top:12px;" onclick="showScreen('menu-screen')">← Volver al Inicio</button>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <div class="stats-bar">
+            <span id="q-counter">Pregunta 1/40</span>
+            <span id="q-score">Aciertos: 0</span>
+            <span id="q-timer" class="timer">50:00</span>
+        </div>
+        <div id="q-cat" class="cat-pill">Capítulo</div>
+        <div id="q-img-container" style="display:none; text-align:center; margin-bottom:12px;"></div>
+        <div id="q-text" class="q-text"></div>
+        <div id="q-options"></div>
+        <div id="q-exp" class="exp-box"></div>
+        <button id="next-btn" class="btn btn-primary btn-center" style="display:none; margin-top:auto;" onclick="nextQuestion()">Siguiente Pregunta →</button>
+        <button class="btn btn-secondary btn-center" style="margin-top:8px;" onclick="confirmExitQuiz()">Salir al Menú</button>
+    </div>
+
+    <div id="result-screen" class="screen" style="text-align:center; justify-content:center;">
+        <h2 id="res-title" style="font-size:1.5rem; margin-bottom:8px;">Resultado</h2>
+        <div id="res-score" style="font-size:2.6rem; font-weight:900; color:var(--primary); margin:12px 0;">0 / 40</div>
+        <p id="res-msg" style="font-size:0.92rem; color:#334155; line-height:1.5; margin-bottom:24px;"></p>
+        <button class="btn btn-primary btn-center" onclick="showScreen('menu-screen')">Volver al Menú Principal</button>
+    </div>
+
+    <div id="guide-screen" class="screen">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchGuideTab('rotondas', this)">Rotondas</button>
+            <button class="tab-btn" onclick="switchGuideTab('senales', this)">Señales</button>
+            <button class="tab-btn" onclick="switchGuideTab('vehiculo', this)">Vehículo</button>
+        </div>
+
+        <div id="guide-rotondas" class="guide-pane">
+            <div class="guide-card">
+                <h3>Circulación en Rotondas de 2 Carriles (CR)</h3>
+                <svg viewBox="0 0 320 200" width="100%" style="background:#e2e8f0; border-radius:10px; margin:8px 0;">
+                    <rect x="130" y="0" width="60" height="200" fill="#475569"/>
+                    <rect x="0" y="70" width="320" height="60" fill="#475569"/>
+                    <circle cx="160" cy="100" r="58" fill="#475569" stroke="#fff" stroke-width="2"/>
+                    <circle cx="160" cy="100" r="42" fill="none" stroke="#fff" stroke-dasharray="5,5" stroke-width="1.5"/>
+                    <circle cx="160" cy="100" r="24" fill="#16a34a" stroke="#fff" stroke-width="2"/>
+                    <path d="M 178 195 L 178 148 Q 208 140 212 115 L 310 115" fill="none" stroke="#38bdf8" stroke-width="4"/>
+                    <path d="M 145 195 L 145 135 A 34 34 0 1 1 185 75 L 185 10" fill="none" stroke="#facc15" stroke-width="4"/>
+                    <text x="10" y="22" font-size="11" font-weight="bold" fill="#0369a1">Carril Derecho: Salidas 1 y 2</text>
+                    <text x="10" y="38" font-size="11" font-weight="bold" fill="#b45309">Carril Izquierdo: Salidas 3, 4 y U</text>
+                </svg>
+                <ul>
+                    <li><strong>Carril Derecho (Externo):</strong> Obligatorio para tomar la 1.ª o 2.ª salida.</li>
+                    <li><strong>Carril Izquierdo (Interno):</strong> Obligatorio para tomar la 3.ª, 4.ª salida o giro en U.</li>
+                    <li><strong>Prioridad:</strong> Quien circula dentro de la rotonda tiene prioridad absoluta.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="guide-senales" class="guide-pane" style="display:none;">
+            <div class="guide-card">
+                <h3>Señalización Vial y Prioridades</h3>
+                <ul>
+                    <li><strong>1. Autoridad:</strong> Las órdenes del oficial de tránsito prevalecen sobre semáforos y señales.</li>
+                    <li><strong>2. Temporales:</strong> Rótulos naranjas por obras viales.</li>
+                    <li><strong>3. Verticales:</strong> Reglamentarias (círculo rojo), Preventivas (rombo amarillo), Informativas.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="guide-vehiculo" class="guide-pane" style="display:none;">
+            <div class="guide-card">
+                <h3>Factor Vehículo y Sistemas</h3>
+                <ul>
+                    <li><strong>Partes Fijas del Motor:</strong> Cabezote, bloque y cárter.</li>
+                    <li><strong>Seguridad Activa:</strong> Frenos ABS, dirección, suspensión, llantas (mínimo 1.6 mm).</li>
+                    <li><strong>Seguridad Pasiva:</strong> Cinturón, airbags, apoyacabezas.</li>
+                </ul>
+            </div>
+        </div>
+
+        <button class="btn btn-secondary btn-center" style="margin-top:auto;" onclick="showScreen('menu-screen')">← Volver al Inicio</button>
+    </div>
+</div>
+
+<div id="paywall-modal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="font-size:2.2rem; margin-bottom:6px;">🏆</div>
+        <h2>Desbloquea los 10 Capítulos PRO</h2>
+        <p style="font-size:0.86rem; color:var(--muted);">Acceso ilimitado al simulador oficial y todo el manual:</p>
+        <ul>
+            <li>✅ <strong>Simulacro Oficial:</strong> 40 preguntas y 50:00 min</li>
+            <li>✅ <strong>Los 10 Capítulos del Manual B1</strong> completos</li>
+            <li>✅ <strong>Opciones aleatorias reales</strong> (Fisher-Yates)</li>
+            <li>✅ <strong>Pago único</strong> de por vida</li>
+        </ul>
+        <button class="btn btn-gold btn-center" onclick="triggerUnityPurchase()">Desbloquear Ahora</button>
+        <button class="btn btn-secondary btn-center" onclick="closePaywall()">Continuar con versión gratuita</button>
+    </div>
+</div>
+
+<script>
+const CHAPTERS = [
+    { id: 1, name: "Cap. 1: El Factor Humano en la Circulación", free: true },
+    { id: 2, name: "Cap. 2: El Vehículo y sus Sistemas", free: true },
+    { id: 3, name: "Cap. 3: La Vía y su Entorno", free: false },
+    { id: 4, name: "Cap. 4: Normas Generales de Circulación", free: false },
+    { id: 5, name: "Cap. 5: Señalamiento Vial", free: false },
+    { id: 6, name: "Cap. 6: Ley de Tránsito N.° 9078 y Sanciones", free: false },
+    { id: 7, name: "Cap. 7: Contaminación Ambiental por Vehículos", free: false },
+    { id: 8, name: "Cap. 8: Conducción en Condiciones Adversas", free: false },
+    { id: 9, name: "Cap. 9: Principios de Conducción Económica", free: false },
+    { id: 10, name: "Cap. 10: Primeros Auxilios y Accidentes", free: false }
+];
+
+const QUESTION_BANK = [
+    { id: 1, cap: 1, q: "¿Cuáles son los tres elementos que conforman la trilogía vial?", opts: ["Factor humano, factor vehículo y factor vía con su entorno", "Conductor, policía y semáforos", "Carretera, señales y peatón", "MOPT, COSEVI y RTV"], ans: 0, exp: "La seguridad vial se compone de la interacción entre el ser humano, el vehículo y la vía." },
+    { id: 2, cap: 1, q: "¿Qué porcentaje aproximado de los accidentes de tránsito se atribuye al factor humano?", opts: ["Más del 90%", "Cerca del 30%", "Exactamente el 50%", "Menos del 10%"], ans: 0, exp: "La gran mayoría de siniestros viales son causados por distracciones, imprudencia o alcohol del conductor." },
+    { id: 3, cap: 1, q: "¿Qué documento debe portar obligatoriamente todo conductor al circular en Costa Rica?", opts: ["Licencia vigente, cédula, marchamo y RTV al día", "Únicamente la licencia de conducir", "Solo el título de propiedad", "El recibo de pago del examen teórico"], ans: 0, exp: "La Ley exige portar la documentación completa del vehículo y del conductor." },
+    { id: 4, cap: 1, q: "En la pirámide de movilidad, ¿quién tiene la máxima prioridad de paso?", opts: ["Los peatones, especialmente niños, adultos mayores y personas con discapacidad", "Los vehículos pesados", "Los automóviles particulares", "Las motocicletas"], ans: 0, exp: "Los usuarios más vulnerables de la vía pública gozan de máxima prioridad." },
+    { id: 5, cap: 1, q: "¿Qué significa conducir a la defensiva?", opts: ["Anticiparse a los errores ajenos y a las condiciones adversas para evitar siniestros", "Circular siempre a menos de 20 km/h", "Tocar la bocina en cada esquina", "Frenar en seco ante cualquier auto"], ans: 0, exp: "La conducción preventiva se basa en la anticipación y el cálculo de riesgos." },
+    { id: 6, cap: 1, q: "¿Cuál es el efecto principal del cansancio prolongado al volante?", opts: ["Disminución de los reflejos, microsueños y errores de apreciación visual", "Aumento excesivo de la audición", "Mejora en la concentración nocturna", "Aceleración involuntaria del pulso"], ans: 0, exp: "La fatiga adormece los sentidos y reduce drásticamente la capacidad de reacción." },
+    { id: 7, cap: 1, q: "¿Cómo afecta el consumo de alcohol en bajas dosis a un conductor?", opts: ["Afecta la coordinación, altera la falsa sensación de seguridad y alarga el tiempo de reacción", "Mejora el enfoque visual en curvas", "No genera ningún cambio perceptible", "Aumenta la destreza motora fina"], ans: 0, exp: "El alcohol es un depresor del sistema nervioso central que deteriora el juicio." },
+    { id: 8, cap: 1, q: "¿Qué es el tiempo de reacción en la conducción?", opts: ["El lapso desde que el conductor percibe un peligro hasta que presiona el freno", "El tiempo que tarda el motor en apagarse", "La duración total del recorrido", "El tiempo que tardan las luces en encender"], ans: 0, exp: "El tiempo de reacción humano promedio es de aproximadamente un segundo." },
+    { id: 9, cap: 1, q: "¿Qué papel juega la anticipación visual en la prevención de accidentes?", opts: ["Permite detectar situaciones de riesgo con varios segundos de ventaja", "Evita que las luces del auto fallen", "Reduce el costo del marchamo", "Mejora la potencia del radio"], ans: 0, exp: "Ver más allá del vehículo que va enfrente es pilar fundamental del manejo a la defensiva." },
+    { id: 10, cap: 1, q: "¿Cómo influye el uso del teléfono celular con manos libres al conducir?", opts: ["Sigue generando una distracción cognitiva importante que reduce la atención en la vía", "Es 100% seguro y recomendado", "Anula por completo cualquier riesgo", "Permite reaccionar más rápido ante imprevistos"], ans: 0, exp: "La distracción cognitiva al conversar por teléfono afecta la capacidad de respuesta y atención." },
+    { id: 101, cap: 1, q: "¿Qué es el efecto túnel en la visión del conductor?", opts: ["Pérdida de la visión periférica debido al exceso de velocidad o fatiga extrema", "Ampliación del campo visual nocturno", "Aumento de la claridad en curvas cerradas", "Enfoque automático en los espejos laterales"], ans: 0, exp: "A mayor velocidad, el cerebro humano solo procesa la información directa al frente." },
+    { id: 102, cap: 1, q: "¿Por qué los conductores noveles suelen tener mayor tasa de accidentalidad?", opts: ["Por menor experiencia en la lectura del entorno vial y falsa confianza en sus habilidades", "Porque manejan vehículos más modernos", "Porque respetan demasiado las señales", "Porque circulan exclusivamente de día"], ans: 0, exp: "La falta de experiencia dificulta la anticipación rápida a imprevistos en carretera." },
+    { id: 130, cap: 1, q: "¿Cuál es el principal factor por el cual los conductores jóvenes subestiman los peligros en la vía?", opts: ["Exceso de confianza y tendencia a asumir mayores riesgos al volante", "Uso obligatorio de lentes oscuros", "Falta de conocimientos teóricos básicos", "Exceso de paciencia al conducir"], ans: 0, exp: "El exceso de confianza es común en conductores inexperimentados." },
+
+    { id: 11, cap: 2, q: "¿Cuál es la profundidad mínima legal del labrado de llantas para vehículos livianos en Costa Rica?", opts: ["1.6 milímetros", "0.5 milímetros", "3.0 milímetros", "5.0 milímetros"], ans: 0, exp: "Un labrado inferior a 1.6 mm reduce la adherencia en mojado y es motivo de rechazo en revisión técnica." },
+    { id: 12, cap: 2, q: "¿Cuáles son las tres partes estructurales fijas principales de un motor?", opts: ["Cabezote (culata), bloque y cárter", "Pistón, biela y cigüeñal", "Radiador, termostato y bomba", "Alternador, bujías y batería"], ans: 0, exp: "Las piezas fijas del motor son el cabezote, el bloque de cilindros y el cárter." },
+    { id: 13, cap: 2, q: "¿Qué función cumple el sistema de frenos ABS?", opts: ["Evitar el bloqueo de las ruedas en frenadas bruscas para conservar el control direccional", "Frenar automáticamente al ver peatones", "Sustituir el freno de mano", "Aumentar la potencia del motor"], ans: 0, exp: "El ABS impide que los neumáticos patinen y se bloqueen al pisar el freno a fondo." },
+    { id: 14, cap: 2, q: "¿Cuál es la función principal del líquido de frenos en un automóvil?", opts: ["Transmitir la presión ejercida en el pedal hacia las mordazas o bandas de las ruedas", "Lubricar los pistones del motor", "Enfriar el radiador en subidas pronunciadas", "Limpiar el parabrisas de impurezas"], ans: 0, exp: "El sistema hidráulico depende de la incompresibilidad del líquido de frenos." },
+    { id: 15, cap: 2, q: "¿Qué función cumple el sistema de suspensión?", opts: ["Absorber las irregularidades del terreno y mantener las llantas adheridas al piso", "Evitar que el motor se recaliente en subidas", "Controlar la velocidad máxima del vehículo", "Reducir el peso total del chasis"], ans: 0, exp: "La suspensión garantiza confort y estabilidad direccional ante baches o curvas." },
+    { id: 16, cap: 2, q: "¿Qué indica un testigo rojo de presión de aceite encendido en el tablero?", opts: ["Falta de presión o nivel crítico de lubricación que exige apagar el motor de inmediato", "Que es momento de cambiar los neumáticos", "Falla en el sistema de radio", "Luces frontales desalineadas"], ans: 0, exp: "Continuar circulando sin presión de aceite fundirá el motor en pocos minutos." },
+    { id: 103, cap: 2, q: "¿Cuál es la función del alternador en el sistema eléctrico del vehículo?", opts: ["Recargar la batería y suplir energía a los sistemas eléctricos mientras el motor funciona", "Arrancar el motor en frío", "Regular la temperatura del agua", "Iluminar el tablero de instrumentos"], ans: 0, exp: "El alternador convierte la energía mecánica en eléctrica para mantener todos los componentes encendidos." },
+    { id: 104, cap: 2, q: "¿Qué función cumple el líquido refrigerante en el motor?", opts: ["Absorber el calor excesivo del motor y disiparlo a través del radiador", "Lubricar los pistones y anillos", "Limpiar los inyectores de gasolina", "Evitar el desgaste de las llantas"], ans: 0, exp: "El sistema de enfriamiento previene el sobrecalentamiento crítico del bloque." },
+    { id: 105, cap: 2, q: "¿Por qué es peligroso conducir con los amortiguadores en mal estado?", opts: ["Porque se alarga la distancia de frenado y el vehículo pierde estabilidad en curvas", "Porque aumenta el consumo de combustible en un 50%", "Porque se queman las bujías con facilidad", "Porque el volante se vuelve demasiado rígido"], ans: 0, exp: "Unos amortiguadores gastados hacen que los neumáticos reboten y pierdan adherencia." },
+    { id: 106, cap: 2, q: "¿Qué componente del vehículo forma parte de la seguridad pasiva?", opts: ["Las bolsas de aire (airbags) y el cinturón de seguridad", "El sistema de frenos ABS", "El dibujo de las llantas", "La dirección hidráulica"], ans: 0, exp: "La seguridad pasiva mitiga las lesiones de los ocupantes una vez que ocurre el choque." },
+    { id: 131, cap: 2, q: "¿Qué función cumple el filtro de aire en el motor de combustión interna?", opts: ["Retener impurezas y polvo para que no ingresen a los cilindros junto con el aire", "Enfriar el combustible antes de la inyección", "Aumentar la presión de escape", "Evitar fugas de aceite en el cárter"], ans: 0, exp: "Un filtro limpio garantiza una mezcla de aire pura y protege el motor contra desgaste prematuro." },
+    { id: 140, cap: 2, q: "¿Qué función cumple la batería en el vehículo?", opts: ["Suministrar corriente eléctrica para encender el motor y alimentar accesorios con el auto apagado", "Impulsar las llantas traseras", "Funcionar como tanque de reserva de gasolina", "Filtrar el aceite del motor"], ans: 0, exp: "La batería almacena energía eléctrica para el arranque inicial." },
+    { id: 141, cap: 2, q: "¿Por qué es fundamental revisar periódicamente la presión de aire de los neumáticos?", opts: ["Para garantizar el agarre correcto, evitar desgaste irregular y optimizar el consumo de combustible", "Para que el carro ruede más rápido en bajadas", "Para mantener limpia la carrocería", "Para evitar que se encienda la radio"], ans: 0, exp: "Una presión adecuada alarga la vida de la llanta y asegura estabilidad." },
+
+    { id: 21, cap: 3, q: "¿Qué función cumple el espaldón en una carretera?", opts: ["Proporcionar área de seguridad para detenciones de emergencia y tránsito peatonal sin acera", "Servir como carril de alta velocidad", "Permitir estacionar todo el día", "Aumentar carriles de rebase"], ans: 0, exp: "El espaldón protege los márgenes de la calzada principal." },
+    { id: 22, cap: 3, q: "¿Qué es la calzada de una vía?", opts: ["La zona de la carretera destinada a la circulación de vehículos", "La acera para peatones", "El área verde central", "El arcén o espaldón"], ans: 0, exp: "La calzada comprende los carriles por donde transita el parque vehicular." },
+    { id: 23, cap: 3, q: "¿Qué define a una vía de doble sentido de circulación?", opts: ["Aquella donde los vehículos circulan en direcciones opuestas separados por demarcación o eje central", "Carreteras exclusivas para transporte público", "Vías donde solo se permite girar a la derecha", "Autopistas con peaje electrónico"], ans: 0, exp: "En las vías bidireccionales se debe extremar el cuidado al adelantar." },
+    { id: 24, cap: 3, q: "¿Qué función cumplen los elementos de iluminación y captafaros (ojos de gato) en la vía?", opts: ["Delimitar claramente los bordes y ejes de la carretera durante la noche o con lluvia", "Iluminar el interior de los vehículos", "Servir de adorno ornamental en puentes", "Medir la velocidad de los autos"], ans: 0, exp: "Los dispositivos reflectantes guían al conductor en condiciones de poca visibilidad." },
+    { id: 107, cap: 3, q: "¿Qué es una isleta en el diseño de una vía?", opts: ["Área superficial demarcada o física que canaliza el tránsito y protege a los peatones", "Un carril exclusivo para autobuses", "Una zona de parqueo temporal", "Un puente sobre ríos caudalosos"], ans: 0, exp: "Las isletas ordenan y separan flujos vehiculares para evitar cruces peligrosos." },
+    { id: 108, cap: 3, q: "¿Qué indica una línea de parada transversal en el pavimento?", opts: ["El sitio exacto donde el vehículo debe detenerse ante un semáforo en rojo o señal de Alto", "El inicio de una zona escolar", "El límite de velocidad máxima", "Un área de carga y descarga"], ans: 0, exp: "Detenerse antes de la línea protege el cruce peatonal señalizado." },
+    { id: 109, cap: 3, q: "¿Cuál es la función de los reductores de velocidad (túmulos)?", opts: ["Obligar a los conductores a disminuir la velocidad en zonas residenciales o escolares", "Servir de carril para motocicletas", "Aumentar la fluidez en autopistas", "Mejora el drenaje pluvial"], ans: 0, exp: "Los túmulos protegen la seguridad peatonal reduciendo forzosamente la velocidad." },
+    { id: 132, cap: 3, q: "¿Qué función cumple el carril de aceleración en el ingreso a una autopista?", opts: ["Permitir que el vehículo alcance una velocidad adecuada similar al flujo de la vía principal antes de incorporarse", "Servir de estacionamiento momentáneo", "Frenar por completo antes de entrar", "Permitir el cambio de llantas"], ans: 0, exp: "El carril de aceleración iguala la velocidad para un ingreso seguro." },
+    { id: 142, cap: 3, q: "¿Qué es una carretera de calzadas separadas?", opts: ["Aquella que cuenta con un obstáculo físico o zona verde central que divide los sentidos opuestos de circulación", "Caminos vecinales sin pavimentar", "Vías de un solo carril alterno", "Rutas con peaje obligatorio"], ans: 0, exp: "La separación física reduce drásticamente el riesgo de colisiones frontales." },
+    { id: 143, cap: 3, q: "¿Cuál es el propósito del cunetal o tragante en las vías urbanas?", opts: ["Recolectar y encauzar las aguas pluviales para evitar inundaciones en la calzada", "Servir de sendero peatonal", "Delimitar estacionamientos", "Dar soporte a los postes de luz"], ans: 0, exp: "Los sistemas de drenaje protegen la superficie de rodamiento del agua estancada." },
+    { id: 144, cap: 3, q: "¿Qué indica una línea blanca discontinua (punteada) en la calzada?", opts: ["Separa carriles en el mismo sentido de circulación y permite adelantar si es seguro", "Prohibición absoluta de rebase", "Borde exclusivo para peatones", "Carril exclusivo de trenes"], ans: 0, exp: "Las líneas discontinuas permiten cambios de carril y adelantamientos con precaución." },
+    { id: 145, cap: 3, q: "¿Qué indica una línea blanca continua en el borde derecho de la carretera?", opts: ["Delimita el borde de la calzada o inicio del espaldón", "Eje central de la vía", "Carril para bicicletas", "Zona exclusiva de carga"], ans: 0, exp: "Marca el límite exterior transitable de la ruta." },
+
+    { 
+        id: 26, 
+        cap: 4, 
+        q: "Al circular por una rotonda de dos carriles, ¿qué carril se debe usar para tomar la tercera salida?", 
+        opts: ["El carril izquierdo (interno)", "El carril derecho (externo)", "Cualquiera de los dos", "El carril central"], 
+        ans: 0, 
+        exp: "El carril interno se utiliza obligatoriamente para salidas 3, 4 o giro en U.",
+        img: `<svg viewBox="0 0 200 120" width="100%" height="110" style="background:#e2e8f0; border-radius:8px;"><circle cx="100" cy="60" r="45" fill="#475569"/><circle cx="100" cy="60" r="28" fill="none" stroke="#fff" stroke-dasharray="3,3"/><circle cx="100" cy="60" r="14" fill="#16a34a"/><path d="M 100 115 L 100 85" stroke="#38bdf8" stroke-width="3"/><path d="M 85 115 L 85 95 A 15 15 0 0 1 115 65 L 130 65" stroke="#facc15" stroke-width="3" fill="none"/></svg>`
+    },
+    { id: 27, cap: 4, q: "Ante la ausencia total de señales en una intersección, ¿quién tiene prioridad de paso?", opts: ["El vehículo que se aproxima por la derecha", "El vehículo que va más rápido", "El vehículo más pesado", "Cualquiera puede pasar"], ans: 0, exp: "Rige la regla general de prioridad al vehículo ubicado a la derecha." },
+    { id: 28, cap: 4, q: "¿Cuál es la distancia mínima de seguridad que debe mantener un vehículo respecto al que le precede en carretera abierta?", opts: ["Un mínimo de dos segundos o la regla de los dos vehículos", "Menos de un metro", "Exactamente diez metros sin importar la velocidad", "La que dictamine el radio"], ans: 0, exp: "La regla de los dos segundos permite reaccionar y frenar sin colisionar por alcance." },
+    { id: 29, cap: 4, q: "Al realizar un viraje a la izquierda desde una vía de doble sentido, ¿desde qué carril debe ubicarse?", opts: ["Desde el carril más cercano al eje central de la vía", "Desde el espaldón derecho", "Desde el carril de estacionamiento", "Desde cualquier carril indistintamente"], ans: 0, exp: "La ubicación correcta previene colisiones transversales con otros vehículos." },
+    { id: 110, cap: 4, q: "¿Qué se debe hacer al escuchar la sirena de una ambulancia en servicio de emergencia?", opts: ["Ceder el paso ubicándose prudentemente hacia el margen derecho y detenerse si es necesario", "Acelerar para abrirles camino por delante", "Ignorarlas si el semáforo está en verde", "Frenar en seco en medio del carril"], ans: 0, exp: "La ley exige facilitar de inmediato el paso a unidades de socorro." },
+    { id: 111, cap: 4, q: "¿Está permitido estacionar un vehículo frente a una rampa para personas con discapacidad?", opts: ["Prohibición absoluta bajo cualquier circunstancia", "Sí, si es por menos de cinco minutos", "Solo en horario nocturno", "Sí, si se dejan las luces intermitentes encendidas"], ans: 0, exp: "Invadir espacios accesibles conlleva multas severas y retiro de placas." },
+    { id: 112, cap: 4, q: "¿Cuál es la regla general para adelantar a un ciclista en carretera?", opts: ["Dejar una distancia lateral mínima de 1.5 metros al rebasarlo", "Tocar la bocina repetidamente", "Pasar a la misma velocidad sin guardar distancia", "Adelantar únicamente en curvas"], ans: 0, exp: "Proteger al ciclista respetando el espacio lateral previene colisiones fatales." },
+    { id: 133, cap: 4, q: "¿Cuál es la norma para realizar un giro a la derecha en una esquina con semáforo en rojo en Costa Rica?", opts: ["Salvo señal en contrario que lo prohíbe, se permite girar con precaución cediendo el paso a peatones y vehículos", "Prohibición absoluta en todo momento", "Solo si va acompañado de otro conductor", "Únicamente de noche"], ans: 0, exp: "La normativa permite el giro a la derecha en rojo cediendo el paso a peatones y flujo preferencial." },
+    { id: 146, cap: 4, q: "¿Qué indica la utilización de las luces direccionales antes de efectuar una maniobra?", opts: ["Anunciar con suficiente anticipación a los demás conductores y peatones la intención de girar o cambiar de carril", "Avisar que el auto tiene una falla mecánica", "Encandilar al vehículo de atrás", "Solicitar permiso para acelerar"], ans: 0, exp: "Las luces direccionales son obligatorias para prevenir sorpresas en el tráfico." },
+    { id: 147, cap: 4, q: "¿Cuál es la forma correcta de incorporarse a una rotonda desde una vía de acceso?", opts: ["Ceder el paso a todos los vehículos que ya circulan dentro de la rotonda y buscar el espacio seguro", "Entrar a toda velocidad sin mirar", "Tocar el claxon para que le cedan el paso", "Detenerse por completo dentro del anillo"], ans: 0, exp: "Los vehículos dentro de la rotonda tienen absoluta prioridad de paso." },
+    { id: 148, cap: 4, q: "¿Está permitido realizar un adelantamiento en un puente o paso a desnivel?", opts: ["Prohibición absoluta por falta de visibilidad y espacio de escape", "Sí, si se va a más de 80 km/h", "Solo si el puente es corto", "Sí, si no hay policías vigilando"], ans: 0, exp: "Los puentes y curvas cerradas son zonas de altísima peligrosidad donde está prohibido rebasar." },
+    { id: 149, cap: 4, q: "¿Qué se debe hacer al aproximarse a un cruce ferroviario a nivel?", opts: ["Reducir la velocidad, cerciorarse de que no se aproxima ningún tren y cruzar sin cambiar de marcha sobre las vías", "Acelerar para cruzar rápido", "Tocar la bocina del auto", "Detenerse y apagar el motor"], ans: 0, exp: "Los cruces de tren exigen máxima atención y precaución." },
+    { id: 150, cap: 4, q: "¿Cuál es la distancia mínima en metros antes de una curva donde está prohibido adelantar?", opts: ["En toda curva con visibilidad reducida o señalizada con línea continua", "Exactamente a 5 metros", "A 100 metros sin excepción", "No hay restricción si se usa luz alta"], ans: 0, exp: "Adelantar sin visibilidad en curvas provoca colisiones frontales fatales." },
+
+    { 
+        id: 36, 
+        cap: 5, 
+        q: "¿Qué forma y color tienen las señales reglamentarias de prohibición u obligación?", 
+        opts: ["Forma circular con aro rojo (prohibición) o fondo azul (obligación)", "Forma triangular amarilla", "Rectángulo verde", "Octágono rojo"], 
+        ans: 0, 
+        exp: "Las señales reglamentarias imponen limitaciones o prohibiciones legales.",
+        img: `<svg viewBox="0 0 160 80" width="100%" height="75" style="background:#f1f5f9; border-radius:8px;"><circle cx="50" cy="40" r="30" fill="#fff" stroke="#dc2626" stroke-width="6"/><circle cx="110" cy="40" r="30" fill="#0284c7"/><text x="45" y="45" font-size="20" fill="#dc2626">⛔</text><text x="103" y="46" font-size="16" fill="#fff">➔</text></svg>`
+    },
+    { id: 37, cap: 5, q: "¿Qué indica una línea amarilla continua en el centro de la vía?", opts: ["Prohibición absoluta de adelantar en ambos sentidos", "Se permite adelantar con precaución", "Separa carriles en el mismo sentido", "Zona escolar"], ans: 0, exp: "La línea continua amarilla restringe el adelantamiento por alta peligrosidad." },
+    { id: 38, cap: 5, q: "¿Qué color distingue a las señales temporales utilizadas en zonas de construcción o trabajos viales?", opts: ["Color anaranjado", "Color verde brillante", "Color azul oscuro", "Color blanco reflectivo"], ans: 0, exp: "Las señales naranjas alertan sobre peligros transitorios por obras en la vía." },
+    { 
+        id: 39, 
+        cap: 5, 
+        q: "¿Qué significa una señal vertical con forma de triángulo equilátero invertido y letras rojas?", 
+        opts: ["Ceda el paso", "Alto total obligatorio", "Zona escolar", "Velocidad máxima"], 
+        ans: 0, 
+        exp: "El letrero de Ceda obliga a ceder la preferencia a quienes circulan por la vía prioritaria.",
+        img: `<svg viewBox="0 0 120 100" width="100%" height="80" style="background:#f1f5f9; border-radius:8px;"><polygon points="60,90 10,15 110,15" fill="#fff" stroke="#dc2626" stroke-width="6"/><text x="45" y="60" font-size="13" font-weight="bold" fill="#dc2626">CEDA</text></svg>`
+    },
+    { id: 113, cap: 5, q: "¿Qué significado tienen las señales de tránsito preventivas (rombo amarillo)?", opts: ["Advierten al conductor sobre la existencia de un peligro o condición peligrosa en la vía", "Prohíben estrictamente una acción", "Indican nombres de destinos y distancias", "Obligan a girar obligatoriamente"], ans: 0, exp: "Buscan que el conductor tome precauciones anticipadas ante riesgos viales." },
+    { id: 114, cap: 5, q: "¿Qué indica un semáforo vehicular con una flecha verde fija?", opts: ["Paso protegido en la dirección que indica la flecha", "Obligación de detenerse por completo", "Falla eléctrica general del sistema", "Paso exclusivo para peatones"], ans: 0, exp: "La flecha verde otorga preferencia absoluta en el giro señalado." },
+    { id: 134, cap: 5, q: "¿Qué significa una señal octagonal roja con la palabra ALTO?", opts: ["Detención obligatoria total cediendo el paso a todos los usuarios de la vía transversal", "Reducir la velocidad sin detenerse", "Aviso de curva peligrosa", "Fin de vía preferencial"], ans: 0, exp: "El Alto exige detenerse por completo antes de continuar la marcha." },
+    { id: 151, cap: 5, q: "¿Qué color y forma tienen las señales de información turística o de servicios en la carretera?", opts: ["Forma rectangular con fondo azul o verde y símbolos blancos", "Triangular roja", "Circular amarilla", "Rombo negro"], ans: 0, exp: "Orientan al conductor sobre servicios, hospitales, gasolineras o sitios turísticos." },
+    { id: 152, cap: 5, q: "¿Qué indica una señal reglamentaria de velocidad máxima permitida?", opts: ["El límite superior al que se puede circular legalmente bajo condiciones normales", "La velocidad mínima obligatoria", "Una sugerencia opcional", "El promedio de velocidad nocturna"], ans: 0, exp: "Superar el límite máximo establecido constituye una infracción legal sancionable." },
+    { id: 153, cap: 5, q: "¿Qué indica una demarcación horizontal en el pavimento con la figura de una bicicleta?", opts: ["Carril exclusivo o compartido destinado a la circulación de ciclistas", "Área para estacionamiento de motos", "Zona de cruce peatonal", "Límite de parada de buses"], ans: 0, exp: "Identifica la prioridad y el espacio asignado a los usuarios de bicicletas." },
+    { id: 154, cap: 5, q: "¿Qué significa una doble línea amarilla central, siendo una continua y otra discontinua?", opts: ["Se permite adelantar únicamente al carril que tiene la línea discontinua a su lado", "Prohibición total de rebase para ambos lados", "Libre rebase en ambos sentidos", "Carril reversible automático"], ans: 0, exp: "Permite el adelantamiento solo a quienes tienen el segmento punteado de su lado." },
+    { id: 155, cap: 5, q: "¿Qué indica un semáforo con luz roja intermitente?", opts: ["Equivale a una señal de Alto: debe detenerse por completo y reanudar la marcha cuando sea seguro", "Paso libre con precaución extrema", "Falla total del sistema eléctrico", "Aviso de velocidad escolar"], ans: 0, exp: "La luz roja intermitente exige detención total obligatoria." },
+    { id: 156, cap: 5, q: "¿Qué indican las tachas reflectivas (ojos de gato) de color rojo en la carretera?", opts: ["Indican que el conductor transita en sentido incorrecto (contra vía)", "El borde exterior de la calzada", "Zona de parqueo", "Carril exclusivo de buses"], ans: 0, exp: "Las tachas rojas alertan de peligro grave por circular en contravía." },
+
+    { id: 46, cap: 6, q: "Según la Ley N.° 9078, ¿cuál es el límite general máximo de velocidad en carreteras nacionales si no hay rótulos?", opts: ["80 km/h", "100 km/h", "60 km/h", "50 km/h"], ans: 0, exp: "El límite genérico en carreteras nacionales es de 80 km/h." },
+    { id: 47, cap: 6, q: "¿Qué niños deben viajar en un dispositivo de retención infantil (silla o booster)?", opts: ["Menores de 12 años con estatura inferior a 1.45 metros", "Solo bebés menores de 1 año", "Niños menores de 5 años", "Ninguno si van atrás"], ans: 0, exp: "La ley exige retención adecuada para menores de 12 años que midan menos de 1.45 m." },
+    { id: 48, cap: 6, q: "¿Cuál es la sanción por conducir bajo los efectos directos del alcohol superando los límites permitidos por ley?", opts: ["Multa acumulativa, detención del vehículo, inhabilitación de licencia y posible causa penal", "Una amonestación verbal de cortesía", "Únicamente una advertencia en el registro", "Descuento de puntos sin multa económica"], ans: 0, exp: "La conducción ebria está penada severamente en la legislación costarricense." },
+    { id: 49, cap: 6, q: "¿Cuál es la vigencia máxima general que se otorga a la licencia de conducir por primera vez en Costa Rica?", opts: ["3 años", "1 año", "5 años", "10 años"], ans: 0, exp: "La licencia expedida por primera vez tiene un periodo probatorio de tres años." },
+    { id: 115, cap: 6, q: "¿Qué sanción principal conlleva acumular puntos por infracciones en la licencia?", opts: ["Cursos obligatorios de reeducación vial y posible suspensión temporal del documento", "Pérdida definitiva del vehículo", "Aumento automático del salario", "Imposibilidad de tanquear gasolina"], ans: 0, exp: "El sistema de puntos corrige conductas infractoras reiteradas en la vía pública." },
+    { id: 116, cap: 6, q: "Según la Ley 9078, ¿cuál es la multa por no llevar a los menores debidamente asegurados en su silla de retención?", opts: ["Multa de categoría gravísima y retiro de placas o retención del auto", "Una amonestación verbal sin costo", "Una multa menor de cortesía", "Descuento de puntos en la licencia únicamente"], ans: 0, exp: "La seguridad infantil al viajar en vehículo es una prioridad legal estricta." },
+    { id: 135, cap: 6, q: "¿Cuál es la tasa máxima de alcohol en sangre permitida para un conductor novato durante sus primeros 3 años de licencia?", opts: ["Cero gramos por litro de sangre (0.00g/l)", "0.20 g/l", "0.50 g/l", "0.75 g/l"], ans: 0, exp: "La ley aplica tolerancia cero estricta para conductores novatos." },
+    { id: 157, cap: 6, q: "¿Cuál es el límite general de velocidad máxima permitida en zonas urbanas según la Ley de Tránsito?", opts: ["40 km/h (salvo señalamiento específico que indique otra cosa)", "60 km/h", "80 km/h", "25 km/h"], ans: 0, exp: "En centros urbanos el límite genérico es de 40 km/h para proteger a los peatones." },
+    { id: 158, cap: 6, q: "¿Qué sanción se aplica por conducir utilizando el teléfono celular sin dispositivo de manos libres?", opts: ["Multa de categoría grave y acumulación de puntos en el expediente de la licencia", "Amonestación verbal", "Retiro inmediato del vehículo", "Ninguna sanción"], ans: 0, exp: "Manipular el celular al conducir distraje gravemente y es una infracción grave." },
+    { id: 159, cap: 6, q: "¿Cuál es la consecuencia legal de negarse a realizar la prueba de alcholemia cuando un oficial de tránsito la solicita?", opts: ["Se presume la culpabilidad máxima por ebriedad, con detención, multa millonaria y causa judicial", "Una simple advertencia", "Pérdida de 2 puntos únicamente", "Dejar el carro estacionado 1 hora"], ans: 0, exp: "La negativa a soplado se tipifica legalmente bajo desobediencia y sanción máxima." },
+    { id: 160, cap: 6, q: "¿Qué establece la ley sobre el uso del cinturón de seguridad en los ocupantes de un vehículo?", opts: ["Es de uso obligatorio para todos los pasajeros tanto en asientos delanteros como traseros", "Solo es obligatorio para el conductor", "Es opcional en asientos traseros", "Solo aplica en carreteras de más de 80 km/h"], ans: 0, exp: "Todos los ocupantes deben portar el cinturón abrochado de manera obligatoria." },
+    { id: 161, cap: 6, q: "¿Cuál es la multa aplicable por estacionar en zonas prohibidas señalizadas con línea amarilla?", opts: ["Multa de categoría leve o moderada con posible retiro de placas según obstrucción", "Amonestación sin multa", "Decomiso de la licencia de por vida", "Pago directo en el sitio al oficial"], ans: 0, exp: "Estacionar en área prohibida afecta la fluidez y amerita sanción pecuniaria." },
+    { id: 162, cap: 6, q: "¿Qué requisito de edad mínima se exige en Costa Rica para solicitar la licencia de conducir tipo B1?", opts: ["18 años cumplidos", "16 años con autorización", "21 años", "25 años"], ans: 0, exp: "La mayoría de edad (18 años) es requisito indispensable para optar por la licencia B1." },
+
+    { id: 56, cap: 7, q: "¿Qué dispositivo se encarga de reducir los gases contaminantes en el escape de un vehículo moderno?", opts: ["El convertidor catalítico", "El filtro de aire", "El silenciador", "El radiador"], ans: 0, exp: "El catalizador transforma gases tóxicos en elementos menos nocivos para el ambiente." },
+    { id: 57, cap: 7, q: "¿Qué consecuencia ambiental genera mantener el motor acelerado en neutro (ralentí) por periodos prolongados?", opts: ["Emisión innecesaria de gases contaminantes, desperdicio de combustible y desgaste prematuro", "Limpieza automática del sistema de escape", "Enfriamiento rápido del motor", "Ahorro de aceite en el cárter"], ans: 0, exp: "El ralentí excesivo contamina el aire y gasta combustible sin movimiento útil." },
+    { id: 58, cap: 7, q: "¿Qué mide fundamentalmente la prueba de opacidad en la Revisión Técnica Vehicular (RTV)?", opts: ["La cantidad de partículas contaminantes y humo emitidas por los motores diésel o gasolina", "El brillo de la pintura exterior", "La intensidad de los faros traseros", "El nivel de ruido del claxon"], ans: 0, exp: "La opacidad evalúa la combustión y limpieza del motor." },
+    { id: 117, cap: 7, q: "¿Cada cuánto tiempo deben someterse los vehículos particulares a la Revisión Técnica Vehicular (RTV)?", opts: ["Una vez al año según el calendario establecido por el dígito de placa", "Cada seis meses sin excepción", "Únicamente al realizar un cambio de dueño", "Cada cinco años"], ans: 0, exp: "La RTV es un requisito anual obligatorio para garantizar condiciones mecánicas óptimas." },
+    { id: 118, cap: 7, q: "¿Qué problemas genera un tubo de escape perforado o sin silenciador?", opts: ["Contaminación acústica excesiva (ruido molesto) y posible rechazo en RTV", "Ahorro significativo de combustible", "Aumento de la velocidad final", "Mejora en el sistema de frenos"], ans: 0, exp: "El ruido excesivo afecta la tranquilidad pública y viola las normativas ambientales." },
+    { id: 136, cap: 7, q: "¿Qué beneficio aporta el mantenimiento adecuado del sistema de inyección y afinación del motor?", opts: ["Optimiza la combustión, disminuye la emisión de gases contaminantes y reduce el consumo de combustible", "Incrementa el peso del auto", "Elimina la necesidad de usar frenos", "Aumenta la temperatura interna del tablero"], ans: 0, exp: "Un motor afinado quema el combustible de manera limpia y eficiente." },
+    { id: 163, cap: 7, q: "¿Qué efectos nocivos provoca el monóxido de carbono (CO) emitido por los vehículos?", opts: ["Es un gas altamente tóxico y asfixiante que reduce la capacidad de transporte de oxígeno en la sangre", "Genera un agradable aroma ambiental", "Ayuda a enfriar la atmósfera", "Fertiliza los jardines de las carreteras"], ans: 0, exp: "El monóxido de carbono es un veneno invisible sumamente peligroso para la salud." },
+    { id: 164, cap: 7, q: "¿Por qué se consideran perjudiciales los aceites y líquidos de motor arrojados indebidamente al suelo?", opts: ["Porque contaminan gravemente los mantos acuíferos subterráneos y el suelo fértil", "Porque mejoran la fricción vial", "Porque eliminan la maleza", "No causan ningún daño ecológico"], ans: 0, exp: "Los hidrocarburos derramados en la vía dañan los ecosistemas naturales de forma irreversible." },
+    { id: 165, cap: 7, q: "¿Qué papel juega el filtro de aceite en la protección ambiental del vehículo?", opts: ["Retiene impurezas metálicas y sedimentos, evitando que el aceite degradado contamine prematuramente el motor", "Filtra el humo del tubo de escape", "Regula la temperatura del aire acondicionado", "Limpia los discos de frenos"], ans: 0, exp: "Un aceite limpio mantiene la eficiencia mecánica y evita desgastes excesivos." },
+    { id: 166, cap: 7, q: "¿Qué medida contribuye a disminuir la contaminación por ruido vehicular en las ciudades?", opts: ["Evitar el uso innecesario de la bocina (claxon) y mantener el sistema de escape en buen estado", "Tocar el claxon en cada semáforo", "Conducir con la ventana abierta escuchando música alta", "Acelerar en neutro"], ans: 0, exp: "La contaminación sónica urbana se reduce evitando bocinas y escapes libres." },
+    { id: 167, cap: 7, q: "¿Cómo incide el peso y la carga excesiva en los niveles de contaminación vehicular?", opts: ["Exige mayor esfuerzo al motor, disparando el consumo de combustible y la emisión de gases nocivos", "Mejora la aerodinámica del automotor", "Reduce las revoluciones por minuto", "Enfría el convertidor catalítico"], ans: 0, exp: "Un vehículo sobrecargado contamina notablemente más debido al esfuerzo extra." },
+    { id: 168, cap: 7, q: "¿Qué componente del vehículo evita la evaporación directa de hidrocarburos del tanque de gasolina al aire libre?", opts: ["El sistema EVAP (recuperación de vapores de combustible con filtro de carbón activo)", "El radiador frontal", "El tapón de aceite", "El alternador"], ans: 0, exp: "El sistema EVAP captura los gases de combustible evitando que salgan a la atmósfera." },
+    { id: 169, cap: 7, q: "¿Por qué es importante el buen estado de las bujías para el control de emisiones?", opts: ["Porque aseguran una chispa limpia y completa que quema totalmente la gasolina, evitando residuos de hollín", "Porque encienden el radio", "Porque cargan la dirección hidráulica", "Porque enfrían los frenos"], ans: 0, exp: "Una mala chispa genera combustión incompleta y humo negro contaminante." },
+
+    { id: 61, cap: 8, q: "¿Qué es el fenómeno de hidroplaneamiento?", opts: ["Pérdida de contacto de las llantas con el pavimento por una capa de agua acumulada", "El empañamiento de vidrios por calor", "Falla de frenos en bajada", "Pérdida de aceite en charcos"], ans: 0, exp: "Ocurre cuando el agua impide que el dibujo de la llanta evacue el líquido, haciendo que el auto flote." },
+    { id: 62, cap: 8, q: "Al conducir con densa neblina en carretera, ¿qué luces se deben utilizar obligatoriamente?", opts: ["Luces bajas (y antiniebla si el vehículo dispone de ellas), evitando usar luces altas", "Únicamente luces de emergencia (parquear)", "Apagar todas las luces para no encandilar", "Luces altas intermitentes"], ans: 0, exp: "Las luces altas reflejan la humedad de la neblina y reducen aún más la visibilidad." },
+    { id: 63, cap: 8, q: "¿Qué acción se debe tomar si se produce una falla repentina de frenos (se van en vacío)?", opts: ["Bomberar el pedal de frenos rápidamente, usar freno de mano gradual y reducir marchas (freno de motor)", "Apagar el motor de inmediato y saltar del auto", "Girar el volante hacia el carril contrario", "Pisar el acelerador a fondo"], ans: 0, exp: "El uso combinado de frenado mecánico y reducción de cambios detiene el auto con seguridad." },
+    { id: 119, cap: 8, q: "¿Cómo se debe actuar si su vehículo comienza a patinar (colearse) sobre pavimento mojado?", opts: ["Girar el volante suavemente hacia el mismo lado que se desliza la parte trasera, sin frenar bruscamente", "Pisar el freno a fondo de inmediato", "Apagar el motor en plena marcha", "Girar el volante en dirección contraria con fuerza"], ans: 0, exp: "Contravolantear con suavidad ayuda a recuperar el control direccional." },
+    { id: 120, cap: 8, q: "¿Qué precaución se debe tomar al conducir de noche frente a vehículos que circulan en sentido contrario?", opts: ["Cambiar de luces altas a luces bajas para no deslumbrar al otro conductor", "Mantener las luces altas encendidas para ver mejor la orilla", "Cerrar los ojos por un segundo", "Acelerar para pasar rápido el cruce"], ans: 0, exp: "El uso correcto de luces bajas previene encandilamientos mutuos peligrosos." },
+    { id: 137, cap: 8, q: "¿Por qué es peligroso pasar por un charco profundo a alta velocidad?", opts: ["Por el riesgo de hidroplaneamiento y la posible entrada de agua al motor (hidrobloqueo)", "Porque se gasta la pintura del capó", "Porque el radio deja de sonar", "Porque se desinfla la llanta de repuesto"], ans: 0, exp: "El agua estancada a velocidad anula el control de dirección y daña el motor." },
+    { id: 170, cap: 8, q: "¿Qué debe hacer si el motor de su vehículo sufre un calentamiento excesivo en carretera?", opts: ["Orillarse en lugar seguro, apagar el aire acondicionado, encender la calefacción para disipar calor y esperar que enfríe antes de abrir el depósito", "Abrir el radiador hirviendo de inmediato", "Acelerar a fondo para llegar más rápido", "Echar agua fría directamente sobre el bloque caliente"], ans: 0, exp: "Abrir un radiador caliente con presión causa quemaduras graves; usar la calefacción ayuda a bajar temperatura." },
+    { id: 171, cap: 8, q: "¿Qué precaución se debe tomar al conducir bajo lluvia fuerte recién iniciada (primeros minutos)?", opts: ["Extremar precauciones porque el polvo y aceite acumulado en el asfalto forman una mezcla sumamente resbaladiza", "Conducir más rápido para salir de la lluvia", "Apagar los limpiaparabrisas", "Desinflar un poco las llantas"], ans: 0, exp: "Los primeros minutos de lluvia mezclan agua con grasa superficial, volviendo la vía un espejo resbaloso." },
+    { id: 172, cap: 8, q: "¿Cómo se debe reaccionar ante el reventón repentino de un neumático delantero en plena marcha?", opts: ["Sostener firmemente el volante con ambas manos apuntando al frente, levantar el pie del acelerador gradualmente sin frenar en seco", "Pisar el freno a fondo de inmediato", "Girar bruscamente hacia la cuneta", "Apagar el motor"], ans: 0, exp: "Frenar en seco ante un reventón delantero provocará que el auto pierda el control por completo." },
+    { id: 173, cap: 8, q: "¿Qué función cumplen las luces de emergencia (intermitentes dobles o 'parquear') en marcha?", opts: ["Solo deben usarse ante detenciones de emergencia, averías graves o para advertir un peligro inminente en la vía", "Para circular a más de 100 km/h", "Para estacionarse en zona prohibida indefinidamente", "Para saludar a otros conductores"], ans: 0, exp: "El uso indebido de luces de emergencia confunde a los demás conductores sobre sus maniobras." },
+    { id: 174, cap: 8, q: "¿Qué se debe hacer si se atasca el acelerador de forma imprevista mientras conduce?", opts: ["Pisar el pedal de embrague (cloche) o colocar la palanca en neutro (N), accionar los frenos y orillarse con precaución", "Apagar el switch y sacar la llave", "Intentar sacarlo con el pie mientras maneja", "Acelerar más para destrabarlo"], ans: 0, exp: "Desconectar la transmisión a neutro elimina la potencia del motor a las ruedas para detenerse seguro." },
+    { id: 175, cap: 8, q: "¿Por qué es peligroso conducir con exceso de velocidad en tramos con fuertes vientos cruzados?", opts: ["Porque la fuerza lateral del viento puede desestabilizar el vehículo y sacarlo de su carril o volcarlo", "Porque se apaga el radio", "Porque se desgastan las bujías", "Porque aumenta el aceite"], ans: 0, exp: "Los vientos laterales fuertes exigen sujetar el volante con firmeza y reducir la velocidad." },
+    { id: 176, cap: 8, q: "¿Qué precaución se debe adoptar al transitar por zonas montañosas con pendientes descendentes pronunciadas?", opts: ["Utilizar freno de motor en marchas bajas para evitar el sobrecalentamiento y fatiga total de las pastillas de freno", "Bajar en neutro (punto muerto) todo el trayecto", "Pisar el freno continuamente sin soltarlo", "Apagar el motor para ahorrar combustible"], ans: 0, exp: "Usar freno de disco continuo en bajadas quema las pastillas y deja el auto sin frenos." },
+
+    { id: 66, cap: 9, q: "Para lograr una conducción económica (eco-conducción), ¿cómo se deben realizar los cambios de marcha?", opts: ["Utilizando marchas altas a bajas revoluciones sin forzar el motor", "Acelerando al máximo antes de cambiar", "Conducir siempre en primera velocidad", "Mantener el motor acelerado en neutro"], ans: 0, exp: "Circular en marchas largas reduce considerablemente el consumo de combustible y emisiones." },
+    { id: 67, cap: 9, q: "¿Cómo influye la presión incorrecta de los neumáticos en el consumo de combustible?", opts: ["Un inflado deficiente aumenta la resistencia al rodamiento y dispara el consumo de gasolina", "Reduce el gasto de combustible por menor fricción", "No tiene relación directa con el motor", "Mejora la velocidad final del automotor"], ans: 0, exp: "Llevar las llantas bajas obliga al motor a esforzarse más, gastando más combustible." },
+    { id: 68, cap: 9, q: "¿Qué función cumple el tacómetro en el tablero del vehículo?", opts: ["Indicar las revoluciones por minuto (RPM) del motor para guiar los cambios de marcha eficientes", "Medir la temperatura exterior", "Indicar la velocidad en millas por hora", "Registrar el kilometraje total"], ans: 0, exp: "El tacómetro ayuda a mantener el motor en su rango óptimo de torque y bajo consumo." },
+    { id: 121, cap: 9, q: "¿Por qué se recomienda apagar el motor al estar detenido en presas prolongadas?", opts: ["Para evitar el consumo innecesario de combustible y la emisión contaminante en ralentí", "Para recargar la batería de forma automática", "Para enfriar el sistema de audio", "Para reiniciar la computadora a bordo"], ans: 0, exp: "Apagar el motor en paradas largas ahorra combustible y reduce emisiones." },
+    { id: 122, cap: 9, q: "¿Cómo afecta el exceso de carga innecesaria en el maletero al consumo de combustible?", opts: ["Aumenta el peso del vehículo, obligando al motor a gastar más energía para desplazarse", "Mejora la tracción en curvas", "Reduce el consumo por aerodinámica", "No genera ningún impacto"], ans: 0, exp: "Llevar peso muerto incrementa directamente el gasto de gasolina." },
+    { id: 138, cap: 9, q: "¿Qué relación tiene la velocidad constante en carretera con el ahorro de combustible?", opts: ["Mantener una velocidad uniforme sin acelerones ni frenazos bruscos optimiza notablemente el rendimiento de la gasolina", "Acelerar y frenar constantemente ahorra energía", "Conducir en primera velocidad ahorra en autopista", "No guarda ninguna relación"], ans: 0, exp: "La suavidad en la conducción evita picos de consumo innecesarios." },
+    { id: 177, cap: 9, q: "¿Cómo influye el uso del aire acondicionado en el consumo de combustible del vehículo?", opts: ["Incrementa moderadamente el consumo porque demanda esfuerzo adicional del motor, siendo más eficiente en carretera abierta que abrir ventanas a alta velocidad", "No consume energía en absoluto", "Reduce el consumo de gasolina a la mitad", "Solo afecta la batería"], ans: 0, exp: "A altas velocidades, abrir las ventanas genera resistencia aerodinámica superior al aire acondicionado." },
+    { id: 178, cap: 9, q: "¿Qué es la técnica de anticipación en la eco-conducción?", opts: ["Visualizar el tráfico con antelación para levantar el pie del acelerador y aprovechar la inercia sin frenar bruscamente", "Acelerar al ver semáforos en rojo", "Circular siempre pegado al auto de enfrente", "Usar el teléfono mientras maneja"], ans: 0, exp: "La anticipación evita desperdiciar energía cinética acumulada." },
+    { id: 179, cap: 9, q: "¿Por qué se aconseja iniciar la marcha inmediatamente después de encender un motor moderno de inyección?", opts: ["Porque calentar el motor en ralentí estático contamina, gasta combustible y no es necesario en autos modernos", "Para que el radio encienda más rápido", "Para quemar las llantas", "Para cargar el tanque de repuesto"], ans: 0, exp: "Los motores modernos alcanzan temperatura óptima circulando suavemente desde el inicio." },
+    { id: 180, cap: 9, q: "¿Qué relación existe entre la aerodinámica del vehículo y el consumo de combustible?", opts: ["Llevar accesorios externos innecesarios (parrillas vacías o carga en el techo) aumenta la resistencia al aire y eleva el gasto de gasolina", "Mejora el rendimiento en un 40%", "No afecta en carretera", "Enfría los frenos traseros"], ans: 0, exp: "Cualquier alteración aerodinámica externa frena el vehículo, obligando al motor a quemar más combustible." },
+    { id: 181, cap: 9, q: "¿En qué rango de revoluciones (RPM) se recomienda realizar los cambios de marcha en un motor de gasolina económico?", opts: ["Entre 2,000 y 2,500 RPM según el manual del fabricante", "Al llegar al límite máximo rojo del tacómetro", "Exactamente a 1,000 RPM en primera", "A 6,000 RPM en todas las marchas"], ans: 0, exp: "Mantener el motor en bajas y medias revoluciones optimiza el torque con mínimo gasto." },
+    { id: 182, cap: 9, q: "¿Qué beneficio económico y mecánico aporta una correcta alineación y balanceo de ruedas?", opts: ["Reduce la fricción y resistencia al rodamiento, economizando combustible y evitando desgaste disparejo de llantas", "Aumenta la velocidad máxima en un 30%", "Mejora el sonido del escape", "Recarga el alternador"], ans: 0, exp: "Un tren delantero bien alineado rueda libremente sin forzar la tracción." },
+    { id: 183, cap: 9, q: "¿Cómo contribuye la planificación anticipada de rutas al ahorro energético y de combustible?", opts: ["Evita rodeos innecesarios, embotellamientos severos y pérdida de tiempo en carretera", "Permite viajar a mayor velocidad ilegal", "Reduce el pago de peajes", "Evita la revisión RTV"], ans: 0, exp: "Planificar el trayecto previene consumo innecesario por congestión vehicular." },
+
+    { id: 71, cap: 10, q: "Ante un accidente de tránsito con heridos graves, ¿cuál es la primera acción prioritaria a realizar?", opts: ["Asegurar la escena, habilitar triángulos y llamar a emergencias (911) sin mover imprudentemente al herido", "Sacar al herido del carro inmediatamente", "Darles agua de beber", "Mover los vehículos a la orilla sin importar las marcas"], ans: 0, exp: "Garantizar la seguridad del entorno y pedir ayuda profesional es vital antes de manipular a una víctima." },
+    { id: 72, cap: 10, q: "¿Por qué se desaconseja extraer objetos incrustados en el cuerpo de una víctima de accidente vial?", opts: ["Porque el objeto puede estar ejerciendo presión sobre un vaso sanguíneo, evitando una hemorragia mayor", "Para evitar que la ropa se ensucie", "Porque el objeto pierde valor legal", "Porque facilita la infección inmediata"], ans: 0, exp: "Retirar objetos incrustados puede desencadenar hemorragias severas e irreversibles." },
+    { id: 73, cap: 10, q: "En la atención de un herido en accidente de tránsito, ¿en qué consiste la fase de 'Avisar' (Protocolo PAS)?", opts: ["Contactar de inmediato al servicio de emergencias 911 brindando detalles precisos de la ubicación y lesionados", "Llamar a los familiares del conductor accidentado", "Publicar fotos en redes sociales", "Avisar a las compañías aseguradoras primero"], ans: 0, exp: "Avisar a los cuerpos de socorro profesionales activa la cadena de supervivencia." },
+    { id: 123, cap: 10, q: "En caso de un accidente, ¿cuál es el objetivo de la fase 'Proteger' dentro del Protocolo PAS?", opts: ["Garantizar la seguridad de la escena para evitar nuevos accidentes o atropellos a rescatistas", "Proteger legalmente al conductor culpable", "Ocultar los vehículos de la prensa", "Evitar que se moje la carretera"], ans: 0, exp: "Asegurar la zona con triángulos y luces es el primer paso antes de auxiliar." },
+    { id: 124, cap: 10, q: "¿Por qué no se debe dar líquidos de beber a una persona inconsciente tras un choque?", opts: ["Porque existe riesgo de asfixia al pasar los líquidos a las vías respiratorias", "Porque el agua pierde propiedades en la calle", "Para evitar que hable con los oficiales", "Porque acelera el ritmo cardíaco"], ans: 0, exp: "Una víctima inconsciente pierde reflejos de deglución, lo que puede causar ahogamiento." },
+    { id: 139, cap: 10, q: "¿Cuándo es obligatorio mover los vehículos involucrados en un choque menor sin personas lesionadas?", opts: ["Cuando obstaculizan el tránsito y se cuenta con medios para documentar la posición o hay acuerdo mutuo", "Nunca bajo ninguna circunstancia", "Solo si lo ordena un juez", "Inmediatamente al cumplirse 10 segundos"], ans: 0, exp: "Mover los autos sin heridos libera las vías y previene presas innecesarias." },
+    { id: 184, cap: 10, q: "¿En qué consiste la fase de 'Auxiliar' dentro del protocolo básico de emergencias (PAS)?", opts: ["Brindar soporte vital básico y primeros auxilios elementales a los heridos según los conocimientos que se posean, sin arriesgarse", "Realizar cirugías complejas en plena calle", "Mandar a los heridos en taxi al hospital", "Esperar que los heridos salgan solos del auto"], ans: 0, exp: "Auxiliar implica asistir de forma prudente mientras llegan los paramédicos profesionales." },
+    { id: 185, cap: 10, q: "¿Qué se debe hacer si una víctima de accidente vial presenta una hemorragia externa profusa en una extremidad?", opts: ["Aplicar presión directa sobre la herida utilizando una compresa limpia o gasa", "Dejar que la sangre fluya para limpiar toxinas", "Dar masajes en el cuello", "Hacer correr a la persona"], ans: 0, exp: "La presión directa es el método más efectivo y recomendado para detener hemorragias externas." },
+    { id: 186, cap: 10, q: "¿Por qué se debe evitar mover o retirar el casco a un motociclista accidentado si se encuentra inconsciente?", opts: ["Porque un movimiento inadecuado puede lesionar severamente la médula espinal cervical y causar parálisis irreversible", "Porque el casco es propiedad de tránsito", "Para que no se le enrede el cabello", "Porque el casco se quita solo al llegar al hospital"], ans: 0, exp: "Retirar el casco sin técnica médica puede seccionar la médula espinal." },
+    { id: 187, cap: 10, q: "¿Qué actitud se debe mantener al auxiliar a personas en estado de shock emocional tras una colisión?", opts: ["Mantener la calma, brindar palabras de tranquilidad y abrigar levemente a la persona afectada", "Gritarle para que reaccione", "Obligarlo a caminar de inmediato", "Dejarlo solo en la vía"], ans: 0, exp: "El apoyo verbal calmado reduce los niveles de ansiedad y el colapso por shock." },
+    { id: 188, cap: 10, q: "¿Cuál es el procedimiento adecuado respecto a los documentos personales y del vehículo tras una colisión leve?", opts: ["Intercambiar datos de licencia, seguro y cédula de forma pacífica, y coordinar con el operador de seguros", "Esconderse para evitar responsabilidades", "Romper la licencia del otro conductor", "Abandonar la escena de inmediato"], ans: 0, exp: "El intercambio transparente de información facilita el trámite ante las aseguradoras." },
+    { id: 189, cap: 10, q: "¿Qué precaución se debe tomar al encender las señales de advertencia ( triángulos reflectivos) tras una avería?", opts: ["Colocarlos a una distancia prudente atrás del vehículo (y adelante si es vía bidireccional) para alertar con tiempo a los conductores", "Ponerlos pegados al parachoques trasero", "Guardarlos dentro de la cajuela abierta", "Lanzarlos a la orilla del río"], ans: 0, exp: "Los triángulos ubicados a distancia otorgan el margen necesario de reacción a los demás autos." },
+    { id: 190, cap: 10, q: "¿Por qué es crucial no abandonar el lugar de un accidente de tránsito con lesionados (delito de fuga)?", opts: ["Porque constituye un delito penal grave tipificado en la ley costarricense que conlleva cárcel e inhabilitación", "Porque la policía no se da cuenta", "Porque se ensucia la licencia", "No tiene consecuencias legales graves"], ans: 0, exp: "La fuga tras un atropello o colisión con heridos está severamente penada por la ley penal y de tránsito." }
+];
+
+let isPro = localStorage.getItem('cosevi_b1_pro') === 'true';
+let seenIds = JSON.parse(localStorage.getItem('cosevi_b1_seen') || '[]');
+let activeQuestions = [];
+let qIndex = 0;
+let score = 0;
+let timerObj = null;
+let secondsLeft = 3000;
+
+function updateUIState() {
+    const proBtn = document.getElementById('header-pro-btn');
+    const examBadge = document.getElementById('exam-lock-badge');
+    const ctaBtn = document.getElementById('unlock-cta-btn');
+
+    if (isPro) {
+        proBtn.innerText = "⭐ PRO ACTIVO";
+        proBtn.classList.add('active');
+        examBadge.innerText = "DISPONIBLE";
+        examBadge.style.background = "#22c55e";
+        ctaBtn.style.display = "none";
+    } else {
+        proBtn.innerText = "🔒 VERSIÓN PRO";
+        proBtn.classList.remove('active');
+        examBadge.innerText = "🔒 PRO";
+        ctaBtn.style.display = "flex";
+    }
+}
+
+function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+function pickSmartQuestions(pool, count) {
+    const shuffledPool = shuffle(pool);
+    const unseen = shuffledPool.filter(q => !seenIds.includes(q.id));
+    const seen = shuffledPool.filter(q => seenIds.includes(q.id));
+    const combined = [...unseen, ...seen].slice(0, count);
+
+    combined.forEach(q => {
+        if (!seenIds.includes(q.id)) {
+            seenIds.push(q.id);
+        }
+    });
+
+    if (seenIds.length >= QUESTION_BANK.length) {
+        seenIds = combined.map(q => q.id);
+    }
+    
+    localStorage.setItem('cosevi_b1_seen', JSON.stringify(seenIds));
+    updateUIState();
+
+    return combined.map(q => {
+        const mapped = q.opts.map((text, idx) => ({ text, isRight: idx === q.ans }));
+        const mixed = shuffle(mapped);
+        return {
+            cap: q.cap,
+            q: q.q,
+            img: q.img || null,
+            opts: mixed.map(m => m.text),
+            ans: mixed.findIndex(m => m.isRight),
+            exp: q.exp
+        };
+    });
+}
+
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function handleStartExam() {
+    if (!isPro) {
+        openPaywall();
+        return;
+    }
+    startQuiz('exam', 40);
+}
+
+function startQuiz(mode, count, chapterFilter = null) {
+    let pool = chapterFilter ? QUESTION_BANK.filter(q => q.cap === chapterFilter) : QUESTION_BANK;
+    activeQuestions = pickSmartQuestions(pool, Math.min(count, pool.length));
+    qIndex = 0;
+    score = 0;
+
+    showScreen('quiz-screen');
+    const timerEl = document.getElementById('q-timer');
+    clearInterval(timerObj);
+
+    if (mode === 'exam') {
+        secondsLeft = 3000;
+        timerEl.style.display = 'inline';
+        timerEl.innerText = "50:00";
+        timerObj = setInterval(() => {
+            secondsLeft--;
+            const m = Math.floor(secondsLeft / 60);
+            const s = secondsLeft % 60;
+            timerEl.innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
+            if (secondsLeft <= 0) {
+                clearInterval(timerObj);
+                finishQuiz();
+            }
+        }, 1000);
+    } else {
+        timerEl.style.display = 'none';
+    }
+    renderQuestion();
+}
+
+function renderQuestion() {
+    const item = activeQuestions[qIndex];
+    const chapObj = CHAPTERS.find(c => c.id === item.cap);
+    document.getElementById('q-counter').innerText = `Pregunta ${qIndex + 1}/${activeQuestions.length}`;
+    document.getElementById('q-score').innerText = `Aciertos: ${score}`;
+    document.getElementById('q-cat').innerText = chapObj ? chapObj.name : `Capítulo ${item.cap}`;
+    document.getElementById('q-text').innerText = item.q;
+
+    const imgContainer = document.getElementById('q-img-container');
+    if (item.img) {
+        imgContainer.innerHTML = item.img;
+        imgContainer.style.display = 'block';
+    } else {
+        imgContainer.innerHTML = '';
+        imgContainer.style.display = 'none';
+    }
+
+    const optsBox = document.getElementById('q-options');
+    optsBox.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+
+    item.opts.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn';
+        btn.disabled = false;
+        btn.innerText = `${letters[idx]}) ${opt}`;
+        btn.onclick = () => selectAnswer(idx, btn);
+        optsBox.appendChild(btn);
+    });
+
+    const expEl = document.getElementById('q-exp');
+    expEl.innerHTML = '';
+    expEl.style.display = 'none';
+    document.getElementById('next-btn').style.display = 'none';
+}
+
+function selectAnswer(idx, btn) {
+    const item = activeQuestions[qIndex];
+    const buttons = document.querySelectorAll('.opt-btn');
+    buttons.forEach(b => b.disabled = true);
+
+    if (idx === item.ans) {
+        btn.classList.add('correct');
+        score++;
+        document.getElementById('q-score').innerText = `Aciertos: ${score}`;
+    } else {
+        btn.classList.add('wrong');
+        if (buttons[item.ans]) {
+            buttons[item.ans].classList.add('correct');
+        }
+    }
+
+    const expEl = document.getElementById('q-exp');
+    expEl.innerHTML = `<strong>Fundamento:</strong> ${item.exp}`;
+    expEl.style.display = 'block';
+    document.getElementById('next-btn').style.display = 'block';
+}
+
+function nextQuestion() {
+    qIndex++;
+    if (qIndex < activeQuestions.length) {
+        renderQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+function confirmExitQuiz() {
+    clearInterval(timerObj);
+    showScreen('menu-screen');
+}
+
+function finishQuiz() {
+    clearInterval(timerObj);
+    showScreen('result-screen');
+    const total = activeQuestions.length;
+    const pct = Math.round((score / total) * 100);
+    document.getElementById('res-score').innerText = `${score} / ${total} (${pct}%)`;
+
+    const title = document.getElementById('res-title');
+    const msg = document.getElementById('res-msg');
+
+    if (pct >= 80) {
+        title.innerText = "¡APROBADO! 🎉";
+        title.style.color = "var(--success)";
+        msg.innerText = "¡Excelente! Superaste el 80% mínimo que exige el COSEVI para aprobar la prueba teórica.";
+    } else {
+        title.innerText = "NO APROBADO ❌";
+        title.style.color = "var(--danger)";
+        msg.innerText = "Se requiere al menos un 80% (32 aciertos en el examen oficial) para aprobar. ¡Vuelve a repasar los capítulos!";
+    }
+}
+
+function openChapters() {
+    showScreen('chapters-screen');
+    const list = document.getElementById('chapters-list');
+    list.innerHTML = '';
+    CHAPTERS.forEach(c => {
+        const locked = !c.free && !isPro;
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary';
+        btn.innerHTML = `
+            <span>${c.name}</span>
+            <span class="${locked ? 'lock-tag' : 'free-tag'}">${locked ? '🔒 PRO' : 'ESTUDIAR'}</span>
+        `;
+        btn.onclick = () => {
+            if (locked) openPaywall();
+            else startQuiz('chapter', 15, c.id);
+        };
+        list.appendChild(btn);
+    });
+}
+
+function openGuide() {
+    showScreen('guide-screen');
+}
+
+function switchGuideTab(tabId, btnEl) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    document.querySelectorAll('.guide-pane').forEach(p => p.style.display = 'none');
+    document.getElementById('guide-' + tabId).style.display = 'block';
+}
+
+function openPaywall() {
+    if (isPro) return;
+    document.getElementById('paywall-modal').classList.add('active');
+}
+
+function closePaywall() {
+    document.getElementById('paywall-modal').classList.remove('active');
+}
+
+function triggerUnityPurchase() {
+    isPro = true;
+    localStorage.setItem('cosevi_b1_pro', 'true');
+    closePaywall();
+    updateUIState();
+    if (document.getElementById('chapters-screen').classList.contains('active')) {
+        openChapters();
+    }
+}
+
+updateUIState();
+</script>
+</body>
+</html>
